@@ -45,7 +45,6 @@ The current desktop build provides:
 - Automated interpretation notes that prefer cleaned/PBC-processed plots when
   available and flag stable candidates, likely imaging artifacts, and possible
   dissociation.
-- Explicit connector boundaries for RDKit, AutoDock Vina, GROMACS, OpenMM, and MDAnalysis.
 
 This build exports local project bundles and Argon SGE scripts, but it still
 keeps cluster execution manual: copy bundles with `scp`, submit jobs on Argon,
