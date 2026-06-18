@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wineinger NHG | Molecular Discovery Workspace</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <h1>Wineinger NHG</h1>
+            <p>Networked molecular discovery workspace</p>
+          </div>
+        </div>
+
+        <button class="primary wide" id="new-project-button" type="button">+ New project</button>
+
+        <nav class="project-nav" aria-label="Projects">
+          <div class="section-label">Projects</div>
+          <div id="project-list"></div>
+        </nav>
+
+        <div class="engine-health legacy-hidden">
+          <div class="section-label">Engine connectors</div>
+          <div id="engine-list"></div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="project-title-wrap">
+            <div class="project-title">
+              <input id="project-name" aria-label="Project name" maxlength="52">
+              <span class="status-chip" id="project-status">Draft</span>
+            </div>
+            <p class="project-kicker">Protein docking, LocalColabFold, HADDOCK3, GROMACS, and Argon handoff in one workspace.</p>
+          </div>
+          <div class="actions legacy-hidden">
+            <button class="ghost" id="load-demo-button" type="button">Load demo</button>
+            <button class="secondary" id="export-button" type="button">Export manifest</button>
+            <button class="secondary" id="export-script-button" type="button">Export SGE job</button>
+            <button class="primary" id="create-run-button" type="button">Create run plan</button>
+          </div>
+        </header>
+
+        <nav class="workflow-tabs" aria-label="Workflow steps">
+          <button class="active" data-workflow-step="proteins" type="button">
+            <span>1</span>
+            Load & view proteins
+          </button>
+          <button data-workflow-step="haddock" type="button">
+            <span>2</span>
+            HADDOCK3
+          </button>
+          <button data-workflow-step="gromacs" type="button">
+            <span>3</span>
+            GROMACS & analysis
+          </button>
+        </nav>
+
+        <section class="workspace-sync" aria-labelledby="workspace-sync-title">
+          <div class="sync-head">
+            <h2 id="workspace-sync-title">Workspace sync</h2>
+            <span id="sync-status">On Argon, <code>cd</code> into the project folder, run <code>pwd</code>, and paste that full path into Argon project path.</span>
+          </div>
+          <div class="sync-grid">
+            <label class="field compact">
+              <span>Local project path</span>
+              <input id="workspace-local-path" type="text" placeholder="C:\\Users\\User\\Documents\\wineinger-nhg\\projects\\project-name">
+            </label>
+            <label class="field compact">
+              <span>Argon host</span>
+              <input id="workspace-argon-host" type="text" placeholder="bwineinger@argon.hpc.uiowa.edu">
+            </label>
+            <label class="field compact">
+              <span>SSH port</span>
+              <input id="workspace-argon-port" type="number" min="1" max="65535" step="1">
+            </label>
+            <label class="field compact">
+              <span>Argon project path</span>
+              <input id="workspace-argon-path" type="text" placeholder="~/wineinger-nhg/PROJECTS/project-name">
+            </label>
+          </div>
+          <div class="sync-actions">
+            <button class="secondary" id="sync-push-button" type="button">Push project</button>
+            <button class="secondary" id="sync-pull-button" type="button">Pull project</button>
+          </div>
+          <pre id="sync-output" class="sync-output">No sync command run yet.</pre>
+        </section>
+
+        <div class="dashboard" id="dashboard">
+          <section class="panel assets-panel" data-step="proteins" aria-labelledby="assets-title">
+            <div class="panel-head">
+              <h2 id="assets-title">Structures</h2>
+            </div>
+            <div class="pdb-import">
+              <label class="field compact">
+                <span>RCSB PDB Structure ID</span>
+                <div class="inline-action">
+                  <input id="pdb-id-input" type="text" maxlength="4" placeholder="3LN1">
+                  <button class="primary" id="fetch-pdb-button" type="button">Import</button>
+                </div>
+              </label>
+              <p class="import-state" id="pdb-import-status">Import experimental complexes directly from RCSB PDB.</p>
+            </div>
+            <div class="system-components">
+              <div class="subhead system-head">
+                <h3>System components</h3>
+                <span class="count" id="component-count">0</span>
+              </div>
+              <div id="component-list" class="component-list"></div>
+              <p class="system-note">Multiple structures require alignment or docking before interaction simulation.</p>
+            </div>
+            <div class="divider-label">Local PDB input</div>
+            <label class="upload-target">
+              <span class="upload-title">Protein structure</span>
+              <span class="upload-detail" id="receptor-label">PDB</span>
+              <input id="receptor-file" type="file" accept=".pdb">
+            </label>
+            <div class="divider-label">Create your own protein</div>
+            <div class="custom-protein-builder">
+              <label class="field compact">
+                <span>Protein name</span>
+                <input id="custom-protein-name" type="text" maxlength="52" placeholder="Custom binder">
+              </label>
+              <label class="field">
+                <span>Amino acid sequence</span>
+                <textarea id="custom-protein-sequence" rows="5" placeholder="MSEQNNTEMTFQIQRIYTKDISFEAPNAPHVFQKDW..."></textarea>
+              </label>
+              <div class="result-tools">
+                <button class="secondary" id="open-custom-colabfold-button" type="button">Open LocalColabFold</button>
+                <button class="secondary" id="export-custom-colabfold-button" type="button">Export sequence files</button>
+                <label class="secondary import-results-button">
+                  Import structure
+                  <input id="custom-colabfold-directory" type="file" webkitdirectory multiple>
+                </label>
+              </div>
+              <p class="result-status" id="custom-protein-status">Paste a sequence, export a ColabFold FASTA, run it locally, then import the output folder to add the predicted structure here as a protein component.</p>
+            </div>
+            <div class="upload-row legacy-hidden">
+              <label class="upload-target">
+                <span class="upload-title">Ligand</span>
+                <span class="upload-detail" id="ligand-label">SDF or MOL</span>
+                <input id="ligand-file" type="file" accept=".sdf,.mol">
+              </label>
+              <button class="upload-remove" id="remove-ligand-button" type="button" title="Remove ligand" aria-label="Remove ligand">&times;</button>
+            </div>
+            <label class="field legacy-hidden">
+              <span>Ligand SMILES</span>
+              <textarea id="smiles-input" rows="3" placeholder="e.g. CC(=O)OC1=CC=CC=C1C(=O)O"></textarea>
+            </label>
+            <div class="metrics legacy-hidden" id="asset-metrics"></div>
+          </section>
+
+          <section class="panel viewer-panel" data-step="proteins" aria-labelledby="viewer-title">
+            <div class="panel-head">
+              <h2 id="viewer-title">Structure view</h2>
+              <div class="segmented" aria-label="Visible layers">
+                <button class="active" id="toggle-receptor" type="button">Proteins</button>
+                <button class="active legacy-hidden" id="toggle-ligand" type="button">Ligand</button>
+              </div>
+            </div>
+            <div class="viewer-controls" aria-label="NGL viewer controls">
+              <label>
+                <span>Style</span>
+                <select id="viewer-style">
+                  <option value="cartoon">Cartoon</option>
+                  <option value="backbone">Backbone</option>
+                  <option value="licorice">Licorice</option>
+                  <option value="ball+stick">Ball+stick</option>
+                  <option value="surface">Surface</option>
+                </select>
+              </label>
+              <label>
+                <span>Color</span>
+                <select id="viewer-color">
+                  <option value="chain">Chain</option>
+                  <option value="element">Element</option>
+                  <option value="residueindex">Residue</option>
+                  <option value="uniform">Teal</option>
+                </select>
+              </label>
+              <label>
+                <span>Quality</span>
+                <select id="viewer-quality">
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="low">Fast</option>
+                </select>
+              </label>
+              <label class="viewer-check">
+                <input id="viewer-show-hetero" type="checkbox" checked>
+                <span>Hetero</span>
+              </label>
+              <button class="secondary viewer-reset" id="viewer-reset" type="button">Reset</button>
+            </div>
+            <div class="viewport">
+              <div id="structure-canvas" class="ngl-stage"></div>
+              <div class="viewport-labels">
+                <span><i class="dot receptor"></i>Proteins</span>
+                <span class="legacy-hidden"><i class="dot ligand"></i>Ligand</span>
+              </div>
+              <div class="viewer-hover-readout" id="viewer-hover-readout"></div>
+              <div class="viewer-note" id="viewer-note"></div>
+              <div class="empty-view" id="empty-view">No structure loaded</div>
+            </div>
+          </section>
+
+          <section class="panel interaction-panel" data-step="haddock" aria-labelledby="interaction-title">
+            <div class="panel-head">
+              <h2 id="interaction-title">Interaction builder</h2>
+            </div>
+            <div class="interaction-body" id="interaction-body">
+              <div class="role-grid">
+                <label class="field compact">
+                  <span>Receptor component</span>
+                  <select id="interaction-receptor"></select>
+                </label>
+                <label class="field compact">
+                  <span>Partner component</span>
+                  <select id="interaction-partner"></select>
+                </label>
+                <label class="field compact">
+                  <span>Receptor chain</span>
+                  <select id="interaction-receptor-chain"></select>
+                </label>
+                <label class="field compact">
+                  <span>Partner chain</span>
+                  <select id="interaction-partner-chain"></select>
+                </label>
+              </div>
+              <div class="interaction-methods" role="group" aria-label="Interaction method">
+                <button class="method-choice active" data-method="haddock3" type="button">
+                  <strong>HADDOCK3</strong>
+                  <small>Protein docking</small>
+                </button>
+                <button class="method-choice legacy-hidden" data-method="usalign" type="button">
+                  <strong>US-align</strong>
+                  <small>Structure overlay</small>
+                </button>
+                <button class="method-choice legacy-hidden" data-method="manual" type="button">
+                  <strong>Manual</strong>
+                  <small>Position later</small>
+                </button>
+              </div>
+              <label class="field compact interaction-guidance">
+                <span>Docking guidance</span>
+                <select id="interaction-guidance">
+                  <option value="blind">Blind docking</option>
+                  <option value="interface">Interface residues</option>
+                  <option value="restraints">Experimental restraints</option>
+                </select>
+              </label>
+              <div class="restraint-grid" id="restraint-grid">
+                <label class="field compact">
+                  <span>Receptor residues</span>
+                  <input id="receptor-restraints" type="text" placeholder="45, 49, 52-56">
+                </label>
+                <label class="field compact">
+                  <span>Partner residues</span>
+                  <input id="partner-restraints" type="text" placeholder="12, 18, 22-25">
+                </label>
+              </div>
+              <p class="interaction-status" id="interaction-status">Add two protein components to configure an interaction workflow.</p>
+              <div class="interaction-export">
+                <button class="secondary" id="export-haddock-button" type="button">Export Argon docking files</button>
+                <span>Discovery campaign: 5 blind, 2 guided, 1 MD</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel results-panel" data-step="haddock" aria-labelledby="results-title">
+            <div class="panel-head">
+              <h2 id="results-title">HADDOCK3 results</h2>
+              <label class="secondary import-results-button">
+                Import outputs
+                <input id="results-directory" type="file" webkitdirectory multiple>
+              </label>
+            </div>
+            <p class="result-status" id="result-status">Import the retrieved Argon <code>outputs</code> folder to review ranked complexes.</p>
+            <div class="haddock-interpretation" id="haddock-interpretation" hidden></div>
+            <div class="result-tools">
+              <button class="secondary" id="infer-interface-button" type="button" disabled>Infer interface residues</button>
+              <span>Ranks contacts across imported poses within 5 A</span>
+            </div>
+            <div class="result-list" id="result-list"></div>
+            <div class="dock-preview">
+              <div class="subhead">
+                <h3>Docked structure preview</h3>
+                <button class="secondary viewer-reset" id="dock-viewer-reset" type="button">Reset</button>
+              </div>
+              <div class="viewport dock-viewport">
+                <div id="dock-structure-canvas" class="ngl-stage"></div>
+                <div class="viewport-labels">
+                  <span><i class="dot receptor"></i>Docked complex</span>
+                </div>
+                <div class="viewer-hover-readout" id="dock-hover-readout"></div>
+                <div class="empty-view" id="dock-empty-view">Preview a HADDOCK3 result</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel colabfold-workflow-panel legacy-hidden" data-step="haddock" aria-labelledby="colabfold-title">
+            <div class="colabfold-panel">
+              <div class="subhead">
+                <h2 id="colabfold-title">Optional ColabFold evidence</h2>
+                <span class="connector-state">Local GPU</span>
+              </div>
+              <div class="result-tools">
+                <button class="secondary" id="open-colabfold-button" type="button">Open LocalColabFold</button>
+                <button class="secondary" id="export-colabfold-button" type="button">Export ColabFold files</button>
+                <label class="secondary import-results-button">
+                  Import ColabFold
+                  <input id="colabfold-directory" type="file" webkitdirectory multiple>
+                </label>
+                <span>Runs alongside the 5-2-1 campaign</span>
+              </div>
+              <p class="result-status" id="colabfold-status">Export FASTA, run LocalColabFold, then import predicted complexes to guide the HADDOCK3 5-2-1 campaign.</p>
+              <div class="colabfold-residue-grid">
+                <label class="field compact">
+                  <span>Receptor residues</span>
+                  <input id="colabfold-receptor-residues" type="text" readonly placeholder="Import ColabFold models">
+                </label>
+                <label class="field compact">
+                  <span>Partner residues</span>
+                  <input id="colabfold-partner-residues" type="text" readonly placeholder="Import ColabFold models">
+                </label>
+              </div>
+              <div class="colabfold-model-list" id="colabfold-model-list"></div>
+            </div>
+          </section>
+
+          <section class="panel gromacs-panel" data-step="gromacs" aria-labelledby="gromacs-title">
+            <div class="gromacs-preparation" id="gromacs-preparation">
+              <div class="subhead">
+                <h2 id="gromacs-title">GROMACS preparation</h2>
+                <span class="connector-state ready">Selected pose</span>
+              </div>
+              <div class="prep-fields">
+                <label class="field compact">
+                  <span>Force field</span>
+                  <select id="prep-force-field">
+                    <option value="amber99sb-ildn">AMBER99SB-ILDN</option>
+                  </select>
+                </label>
+                <label class="field compact">
+                  <span>Water model</span>
+                  <select id="prep-water-model">
+                    <option value="tip3p">TIP3P</option>
+                  </select>
+                </label>
+                <label class="field compact">
+                  <span>Box shape</span>
+                  <select id="prep-box-shape">
+                    <option value="dodecahedron">Dodecahedron</option>
+                    <option value="cubic">Cubic</option>
+                  </select>
+                </label>
+                <label class="field compact">
+                  <span>Padding (nm)</span>
+                  <input id="prep-padding" type="number" min="0.8" max="3" step="0.1">
+                </label>
+                <label class="field compact">
+                  <span>Salt (M)</span>
+                  <input id="prep-salt" type="number" min="0" max="1" step="0.01">
+                </label>
+                <label class="field compact">
+                  <span>Temperature (K)</span>
+                  <input id="prep-temperature" type="number" min="250" max="330" step="1">
+                </label>
+              </div>
+              <button class="primary gromacs-prep-export" id="export-gromacs-prep-button" type="button">Export GROMACS preparation</button>
+              <p class="result-status" id="gromacs-prep-status">Creates a CPU preparation job that generates <code>inputs/production.tpr</code> for GPU MD.</p>
+            </div>
+          </section>
+
+          <section class="panel analysis-panel" data-step="gromacs" aria-labelledby="analysis-title">
+            <div class="panel-head">
+              <h2 id="analysis-title">Post-run analysis</h2>
+              <label class="secondary import-results-button">
+                Import analysis
+                <input id="analysis-directory" type="file" webkitdirectory multiple>
+              </label>
+            </div>
+            <p class="result-status" id="analysis-status">Import the copied Argon <code>analysis</code> folder to review GROMACS trajectory metrics.</p>
+            <div class="analysis-file-guide" id="analysis-file-guide" hidden></div>
+            <div class="analysis-interpretation" id="analysis-interpretation"></div>
+            <div class="analysis-metrics" id="analysis-metrics"></div>
+            <div class="analysis-view" id="analysis-view">
+              <div class="analysis-tabs" id="analysis-tabs"></div>
+              <div class="analysis-chart">
+                <div class="analysis-chart-head">
+                  <div>
+                    <h3 id="analysis-chart-title">No analysis loaded</h3>
+                    <p id="analysis-chart-detail">Import an analysis folder to display trajectory plots.</p>
+                  </div>
+                  <span class="connector-state" id="analysis-point-count">0 points</span>
+                </div>
+                <canvas id="analysis-chart-canvas"></canvas>
+              </div>
+            </div>
+            <details class="analysis-summary">
+              <summary>Analysis summary</summary>
+              <pre id="analysis-summary-text">No summary imported.</pre>
+            </details>
+          </section>
+
+          <section class="panel workflow-panel legacy-hidden" aria-labelledby="workflow-title">
+            <div class="panel-head">
+              <h2 id="workflow-title">Workflow</h2>
+              <select id="preset-select" aria-label="Workflow preset">
+                <option value="docking">Quick docking</option>
+                <option value="refinement">Docking + GROMACS MD</option>
+                <option value="stability">GROMACS stability MD</option>
+              </select>
+            </div>
+            <div class="steps" id="workflow-steps"></div>
+            <div class="settings-row">
+              <label class="small-field">
+                <span>pH</span>
+                <input id="ph-input" type="number" min="0" max="14" step="0.1">
+              </label>
+              <label class="small-field">
+                <span>Docking poses</span>
+                <input id="poses-input" type="number" min="1" max="50" step="1">
+              </label>
+              <label class="small-field">
+                <span>MD length (ns)</span>
+                <input id="md-input" type="number" min="0.1" max="1000" step="0.1">
+              </label>
+            </div>
+            <div class="execution-panel">
+              <div class="subhead">
+                <h3>Cluster execution</h3>
+                <span class="connector-state ready">SGE / qsub</span>
+              </div>
+              <label class="cluster-toggle">
+                <input id="cluster-enabled" type="checkbox">
+                <span>Submit GROMACS MD runs to Argon</span>
+              </label>
+              <div class="cluster-fields" id="cluster-fields">
+                <label class="field compact">
+                  <span>SSH host</span>
+                  <input id="cluster-host" type="text" placeholder="argon.hpc.uiowa.edu">
+                </label>
+                <label class="field compact">
+                  <span>SSH port</span>
+                  <input id="cluster-port" type="number" min="1" max="65535" step="1">
+                </label>
+                <label class="field compact">
+                  <span>Queue</span>
+                  <input id="cluster-queue" type="text" placeholder="UI-GPU">
+                </label>
+                <label class="field compact full">
+                  <span>Prerequisite module</span>
+                  <input id="cluster-prerequisite" type="text" placeholder="stack/legacy">
+                </label>
+                <label class="field compact full">
+                  <span>GROMACS module</span>
+                  <input id="cluster-module" type="text" placeholder="gromacs/2016.3_cuda-8.0.61_openmpi-2.1.2_gcc-4.8.5">
+                </label>
+                <label class="field compact">
+                  <span>GROMACS command</span>
+                  <input id="cluster-command" type="text" placeholder="gmx">
+                </label>
+                <label class="field compact">
+                  <span>GPU capability</span>
+                  <select id="cluster-gpu-support">
+                    <option value="disabled">Disabled in build</option>
+                    <option value="enabled">GPU-enabled build</option>
+                    <option value="unknown">Not verified</option>
+                  </select>
+                </label>
+                <label class="field compact">
+                  <span>Walltime</span>
+                  <input id="cluster-time" type="text" placeholder="24:00:00">
+                </label>
+                <label class="field compact">
+                  <span>CPU threads</span>
+                  <input id="cluster-cpus" type="number" min="1" max="256" step="1">
+                </label>
+              </div>
+              <label class="cluster-toggle gpu-toggle">
+                <input id="cluster-gpu" type="checkbox">
+                <span>Request one GPU allocation after GPU build verification</span>
+              </label>
+              <p class="execution-note" id="execution-note">Uses Argon SGE <code>qsub</code>. Submission expects <code>inputs/production.tpr</code> from the preparation stage.</p>
+            </div>
+          </section>
+
+          <section class="panel runs-panel legacy-hidden" aria-labelledby="runs-title">
+            <div class="panel-head">
+              <h2 id="runs-title">Run plans</h2>
+              <span class="count" id="run-count">0</span>
+            </div>
+            <div class="run-list" id="run-list"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <template id="project-template">
+      <article class="project-row">
+        <button class="project-open" type="button">
+          <span class="project-glyph"></span>
+          <span class="project-copy"><strong></strong><small></small></span>
+        </button>
+        <div class="project-actions">
+          <button class="project-action rename" type="button">Rename</button>
+          <button class="project-action delete" type="button">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <template id="run-template">
+      <article class="run-row">
+        <div>
+          <strong></strong>
+          <small></small>
+        </div>
+        <span class="run-state"></span>
+      </article>
+    </template>
+    <script src="./vendor/ngl.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
+
+
+
